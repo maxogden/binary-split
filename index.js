@@ -10,7 +10,7 @@ function BinarySplit (splitOn) {
     ? Buffer.from(splitOn)
     : new Buffer(splitOn) // eslint-disable-line
   var buffered
-  return through(write, end)
+  return through({ readableObjectMode: true }, write, end)
 
   function write (buf, enc, done) {
     var offset = 0
@@ -24,7 +24,9 @@ function BinarySplit (splitOn) {
     while (true) {
       var idx = firstMatch(buf, offset - matcher.length + 1)
       if (idx !== -1 && idx < buf.length) {
-        this.push(buf.slice(lastMatch, idx))
+        if (lastMatch !== idx) {
+          this.push(buf.slice(lastMatch, idx))
+        }
         offset = idx + matcher.length
         lastMatch = offset
       } else {
@@ -37,7 +39,7 @@ function BinarySplit (splitOn) {
   }
 
   function end (done) {
-    if (buffered) this.push(buffered)
+    if (buffered && buffered.length > 0) this.push(buffered)
     done()
   }
 

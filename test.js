@@ -1,5 +1,6 @@
 var test = require('tape')
 var fs = require('fs')
+var PassThrough = require('stream').PassThrough
 var split = require('./')
 
 var bufferFrom = Buffer.from && Buffer.from !== Uint8Array.from
@@ -110,4 +111,17 @@ test('lookbehind in multi character matcher', function (t) {
   splitStream.write('\n')
   splitStream.write('\rb')
   splitStream.end()
+})
+
+test('should not combine outputs', function (t) {
+  var pt = new PassThrough()
+  var stream = pt.pipe(split('.'))
+  pt.write('a.b')
+  pt.end('c.d')
+  setImmediate(function () {
+    t.equal(stream.read().toString(), 'a')
+    t.equal(stream.read().toString(), 'bc')
+    t.equal(stream.read().toString(), 'd')
+    t.end()
+  })
 })
